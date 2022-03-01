@@ -1,0 +1,138 @@
+﻿@using System.IO
+
+@using DetAct.Data.Services
+
+@implements IDisposable
+@inject DirectoryWatcherService directoryWatcherService
+
+<div class="col-md-auto @Class">
+    <div class="row justify-content-md-center">
+
+        @if(!LoadOnly) {
+            <div class="col-md-3 mb-1 d-grid gap-2 d-md-block">
+                <label for="loadFile" class="btn btn-primary" type="button">Upload file</label>
+                <InputFile input id="loadFile" class="d-none" style="visibility:hidden;" OnChange="HandleUpLoadFile" type="file" accept=".btml" />
+
+                <a class="btn btn-primary @(string.IsNullOrWhiteSpace(SelectedFileName) ? "disabled" : "" )" href="/download?name=@SelectedFileName" target="_top">Download</a>
+            </div>
+
+            <div class="col-md-1 mb-1"></div>
+        }
+
+        <form class="col-md-6 mb-1">
+            <div class="input-group">
+                <span class="input-group-text">Tree:</span>
+                <input class="form-control" list="behaviour_trees" @bind="SelectedFileName" disabled="@Disabled">
+                <datalist id="behaviour_trees">
+
+                    @foreach(var fileName in files) {
+                        <option value="@fileName" />
+                    }
+
+                </datalist>
+                <span class="input-group-text d-none d-md-block">.btml</span>
+
+                <button class="btn btn-primary" @onclick="HandleLoadFile" type="button" disabled="@Disabled">Load</button>
+
+                @if(!LoadOnly) {
+                    <button class="btn btn-primary" @onclick="HandleNewFile" type="button" disabled="@Disabled">New</button>
+                    <button class="btn btn-primary" @onclick="HandleRemoveFile" type="button" disabled="@Disabled">Remove</button>
+                }
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public EventCallback<string> FileHasChanged { get; set; }
+
+    [Parameter]
+    public bool LoadOnly { get; set; } = false;
+
+    [Parameter]
+    public bool Disabled { get; set; } = false;
+
+    private IList<string> files;
+
+    private string SelectedFileName { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        directoryWatcherService.Initialize("*.btml");
+
+        directoryWatcherService.OnDirectoryHasChanged += OnDirectoryHasChanged;
+        files = directoryWatcherService.FileList;
+    }
+
+    private async void HandleUpLoadFile(InputFileChangeEventArgs e)
+    {
+        var browserFile = e.GetMultipleFiles().Single();
+        if(!browserFile.Name.EndsWith(".btml"))
+            return;
+
+        var name = browserFile.Name.Replace(".btml", "");
+        if(files.Contains(name))
+            return;
+
+        using(var fs = directoryWatcherService.CreateNewFile(name)) {
+            await browserFile.OpenReadStream().CopyToAsync(fs);
+
+            SelectedFileName = name;
+        }
+    }
+
+    private void HandleLoadFile()
+    {
+        if(string.IsNullOrWhiteSpace(SelectedFileName))
+            return;
+
+        FileHasChanged.InvokeAsync(SelectedFileName);
+
+        SelectedFileName = "";
+    }
+
+    private void HandleNewFile()
+    {
+        if(string.IsNullOrWhiteSpace(SelectedFileName))
+            return;
+
+        using var buffer = directoryWatcherService.CreateNewFile(SelectedFileName);
+    }
+
+    private void HandleRemoveFile()
+    {
+        if(string.IsNullOrWhiteSpace(SelectedFileName))
+            return;
+
+        directoryWatcherService.RemoveFile(SelectedFileName);
+    }
+
+    private async void OnDirectoryHasChanged(object sender, FileSystemEventArgs e)
+    {
+        files = directoryWatcherService.FileList;
+
+        if(!string.IsNullOrWhiteSpace(SelectedFileName)) {
+            if(e.ChangeType == WatcherChangeTypes.Renamed) {
+                var renaming = e as RenamedEventArgs;
+                SelectedFileName = renaming.Name;
+            }
+
+            if(files.FirstOrDefault(fileName => fileName == SelectedFileName) is null)
+                SelectedFileName = "";
+        }
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    public void Dispose()
+    {
+        directoryWatcherService.OnDirectoryHasChanged -= OnDirectoryHasChanged;
+    }
+}

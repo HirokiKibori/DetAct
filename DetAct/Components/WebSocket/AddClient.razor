@@ -1,0 +1,67 @@
+﻿@using Data.Model
+@using Blazored.LocalStorage
+
+@implements IDisposable
+@inject ILocalStorageService localStorage
+
+<div class="col-md-auto">
+    <EditForm Model="@client" OnValidSubmit="@HandleValidSubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="input-group mb-3">
+            <InputText id="category" @bind-Value="client.Category" type="text" class="form-control" placeholder="Category" />
+            <InputText id="name" @bind-Value="client.Name" type="text" class="form-control" placeholder="Client name" />
+
+            <button class="btn btn-outline-secondary btn-primary" type="submit">Add</button>
+        </div>
+    </EditForm>
+</div>
+
+@code{
+    [Parameter]
+    public string StorrageKey { get; set; }
+
+    private Client client = new();
+    private Dictionary<string, List<string>> clients;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        localStorage.Changed += OnLocalStorageChanged;
+    }
+
+    private async Task HandleValidSubmitAsync(EditContext editContext)
+    {
+        if(!clients.ContainsKey(key: client.Category))
+            clients.Add(key: client.Category, value: new());
+
+        if(clients.TryGetValue(key: client.Category, value: out List<string> names)) {
+            if(!names.Contains(value: client.Name))
+                names.Add(client.Name);
+
+            client = new();
+        }
+
+        if(!string.IsNullOrWhiteSpace(StorrageKey))
+            await localStorage.SetItemAsync(key: StorrageKey, data: clients);
+    }
+
+    private async void OnLocalStorageChanged(object sender, ChangedEventArgs e)
+    {
+        clients = await localStorage.GetItemAsync<Dictionary<string, List<string>>>(StorrageKey) ?? new();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender) {
+            clients = await localStorage.GetItemAsync<Dictionary<string, List<string>>>(StorrageKey) ?? new();
+        }
+    }
+
+    public void Dispose()
+    {
+        localStorage.Changed -= OnLocalStorageChanged;
+    }
+}

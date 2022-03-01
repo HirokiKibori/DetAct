@@ -1,0 +1,155 @@
+﻿@using DetAct.Data.Services
+
+@using Blazored.LocalStorage
+
+@implements IDisposable
+@inject ILocalStorageService localStorage
+@inject WebSocketService webSocketService
+
+<div class="table-responsive-md @Class">
+    <h3>Known clients</h3>
+    @if(clients is not null) {
+        <table class="table">
+            <tbody>
+                @foreach(var category in clients) {
+                    <tr>
+                        <td>
+                            <table class="table table-striped caption-top">
+                                <caption>@category.Key</caption>
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th scope="col" class="col-1"></th>
+                                        <th scope="col" class="col-1"></th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col" class="col-2 d-none d-md-table-cell">IP</th>
+                                        <th scope="col" class="col-2 d-none d-md-table-cell">Port</th>
+                                        <th scope="col" class="col-1"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach(var client in category.Value) {
+                                        var session = webSocketService.GetSession(category.Key, name: client);
+                                        var rowClass = session is not null ? "table-primary" : "";
+
+                                        <tr class="@rowClass">
+                                            <td>
+                                                <button type="button" class="btn btn-secondary" title="remove"
+                                                        @onclick="async() => await RemoveClient(key: category.Key, name: client)">
+                                                    <span class="oi oi-circle-x" aria-hidden="true"></span>
+                                                </button>
+                                            </td>
+
+                                            <td>
+                                                @if(session is not null) {
+                                                    <button type="button" class="btn btn-secondary" title="disconnect"
+                                                            @onclick="async () => await session.CloseAsync()">
+                                                        <span class="oi oi-power-standby" aria-hidden="true"></span>
+                                                    </button>
+                                                }
+                                            </td>
+
+                                            <td>@client</td>
+
+                                            @if(session is not null) {
+                                                <td class="d-none d-md-table-cell">@session.IP</td>
+                                                <td class="d-none d-md-table-cell">@session.Port</td>
+                                            }
+                                            else {
+                                                <td class="d-none d-md-table-cell"></td>
+                                                <td class="d-none d-md-table-cell"></td>
+                                            }
+
+                                            <td>
+                                                <a type="button" class="btn btn-secondary" title="details" href="clients/@category.Key/@client">
+                                                    <span class="oi oi-list" aria-hidden="true"></span>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public string StorrageKey { get; set; }
+
+    private Dictionary<string, List<string>> clients;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        localStorage.Changed += OnLocalStorageChanged;
+        webSocketService.OnDetActSessionsUpdated += OnDetActSessionsUpdated;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender && !string.IsNullOrWhiteSpace(StorrageKey)) {
+            clients = await localStorage.GetItemAsync<Dictionary<string, List<string>>>(StorrageKey) ?? new();
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveClient(string key, string name)
+    {
+        var session = webSocketService.GetSession(category: key, name);
+
+        if(session is not null)
+            await session.CloseAsync();
+
+        if(clients.TryGetValue(key, out List<string> names))
+            names.Remove(item: name);
+
+        if(names.Count <= 0)
+            clients.Remove(key);
+
+        if(!string.IsNullOrWhiteSpace(StorrageKey))
+            await localStorage.SetItemAsync(key: StorrageKey, data: clients);
+    }
+
+    private async void OnDetActSessionsUpdated(object sender, WebSocketEventArgs e)
+    {
+        if(clients.TryGetValue(key: e.Category, out List<string> knownNames) && knownNames.Contains(item: e.Name)) {
+            await InvokeAsync(() => StateHasChanged());
+
+            return;
+        }
+
+        if(e.Type is WebSocketEventArgs.EventType.DISCONNECTED)
+            return;
+
+        if(!clients.ContainsKey(key: e.Category))
+            clients.Add(key: e.Category, value: new());
+
+        if(clients.TryGetValue(key: e.Category, value: out List<string> names))
+            names.Add(e.Name);
+
+        if(!string.IsNullOrWhiteSpace(StorrageKey))
+            await localStorage.SetItemAsync(key: StorrageKey, data: clients);
+    }
+
+    private async void OnLocalStorageChanged(object sender, ChangedEventArgs e)
+    {
+        clients = await localStorage.GetItemAsync<Dictionary<string, List<string>>>(StorrageKey) ?? new();
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    public void Dispose()
+    {
+        localStorage.Changed -= OnLocalStorageChanged;
+        webSocketService.OnDetActSessionsUpdated -= OnDetActSessionsUpdated;
+    }
+}

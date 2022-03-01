@@ -1,0 +1,37 @@
+﻿/* --- Defeniton of initial BlackBoards */
+Default:BlackBoard := [(Pos, 0), (Push, true), (Item, null)];
+StackMemory:BlackBoard := [];
+
+/* --- Definition of client-supported functions */
+FunctionList := [
+					GreatherThen(board currentPos, string value),
+					CheckPush(board push),
+					GetItem(board itemToPop),
+					CheckItemToPush(board currentItem),
+					IncrementPos_(board currentPos, string keyForPos),
+					DecrementPos_(board currentPos, string keyForPos),
+					SaveItem_(board posToPush, board itemToPush, string boardName)
+				];
+
+/* --- HighLevel-tree */
+ROOT := Stack;
+Stack:Selector := PushTree | PopTree;
+
+PushTree:Root := Push;
+PopTree:Root := Pop;
+
+Push:Sequence := CheckPush | CheckItem | Increment | PushItem;
+Pop:Sequence := CheckPop | PopPossible | PopItem | Decrement;
+
+CheckPop:Inverter := CheckPush;
+
+/* --- Conditions */
+PopPossible:Condition := GreatherThen(Default[Pos], "0");
+CheckPush:Condition := CheckPush(Default[Push]);
+CheckItem:Condition := CheckItemToPush(Default[Item]);
+
+/* --- Actions */
+PopItem:Action := GetItem(StackMemory[Default[Pos]]);
+Increment:Action := IncrementPos_(Default[Pos], "Pos");
+Decrement:Action := DecrementPos_(Default[Pos], "Pos");
+PushItem:Action := SaveItem_(Default[Pos], Default[Item], "StackMemory");

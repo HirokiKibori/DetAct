@@ -1,0 +1,27 @@
+﻿@using Data.Util
+
+@using Array = Data.Util.Array;
+
+@foreach(var property in Object.Properties) {
+    <li>
+        @property.Name
+        @if(property.Value is Text) {
+            @: : @((property.Value as Text).Content)
+        }
+        @if(property.Value is Array) {
+            <ul class="json-array no-bullet">
+                <JSONArrayPrinter Array="@(property.Value as Array)" />
+            </ul>
+        }
+        @if(property.Value is JSONObject) {
+            <ul class="json-object no-bullet">
+                <JSONObjectPrinter Object="@(property.Value as JSONObject)" />
+            </ul>
+        }
+    </li>
+}
+
+@code {
+    [Parameter]
+    public JSONObject Object { get; set; }
+}

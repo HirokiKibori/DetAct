@@ -1,0 +1,30 @@
+﻿@page "/treeeditor"
+
+@using DetAct.Data.Model
+@using Data.Services
+
+@using Tree = DetAct.Behaviour.BehaviourTree
+
+<div>
+    <div class="row justify-content-md-center">
+        <FileHandler Class="col-md-12" FileHasChanged="OnFileHasChanged" />
+    </div>
+
+    <div class="row justify-content-md-center my-5">
+        <TreeFileEditor @ref="treeFileEditor" TreeWasCreated="TreeWasCreated" />
+    </div>
+
+    <div class="row justify-content-md-center">
+        <BehaviourTree Class="col-md-12 overflow-hidden" Tree="@Tree" Name="@Tree.Name" />
+    </div>
+</div>
+
+@code {
+    private Tree Tree = Tree.Default;
+
+    private TreeFileEditor treeFileEditor;
+
+    private void OnFileHasChanged(string fileName) => treeFileEditor.LoadFile(fileName);
+
+    private void TreeWasCreated(Tree tree) => Tree = tree;
+}

@@ -1,0 +1,50 @@
+﻿@using DetAct.Behaviour
+@using DetAct.Behaviour.Base
+@using DetAct.Behaviour.Concrete
+
+<li>
+    <span class="fs-5 text-body @(GetAlertClassForStatus(ChildNode.Status))">
+        @switch(ChildNode) {
+            case Root:
+                <label class="oi oi-ban pt-2" aria-hidden="true" />
+                break;
+            default:
+                <label class="fs-6 border-bottom border-secondary row justify-content-center px-2">@(ChildNode.GetType().Name)</label>
+                @(ChildNode.Name)
+                <slot class="text-muted" style="font-size: smaller;">
+                    @foreach(var info in ChildNode.GetBehaviourInfo()) {
+                        <small><br />@info</small>
+                    }
+                </slot>
+                break;
+        }
+    </span>
+    @if(ChildNode is IHighLevelBehaviour) {
+        <ul>
+            @*TODO: Remove if itterator works correctly*@
+            @if(ChildNode is Conditional) {
+                <BehaviourNode ChildNode=@((ChildNode as Conditional).Condition) />
+            }
+            @foreach(var child in (ChildNode as IHighLevelBehaviour).Childs) {
+                <BehaviourNode ChildNode=child />
+            }
+        </ul>
+    }
+</li>
+
+@code {
+    [Parameter]
+    public IBehaviour ChildNode { get; set; }
+
+    public static string GetAlertClassForStatus(BehaviourStatus behaviourStatus)
+    {
+        return behaviourStatus switch
+        {
+            BehaviourStatus.FAILURE => "alert-danger",
+            BehaviourStatus.SUCCESS => "alert-success",
+            BehaviourStatus.RUNNING => "alert-warning",
+
+            _ => "alert-light",
+        };
+    }
+}

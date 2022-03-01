@@ -1,0 +1,42 @@
+﻿@using Data.Util
+
+@using DetAct.Components.SubComponents
+
+@using System.Collections.Immutable
+
+<div class="col">
+    <div class="card">
+        <div class="card-header mx-auto">
+            <h5 class="card-title">@Name</h5>
+        </div>
+        <div class="card-body">
+            <p class="card-text">
+                <ul class="no-bullet">
+                    <JSONObjectPrinter Object="@GetObject()" />
+                </ul>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Data { get; set; }
+
+    [Parameter]
+    public string Name { get; set; } = "JSON-Object";
+
+    private JSONObject GetObject()
+    {
+        JSONObject result = null;
+
+        try {
+            result = JSONParser.ParseProgram(Data);
+        }
+        catch(Exception e) {
+            result = new JSONObject((new Property[] { new Property("ERROR", new Text(e.Message)) }).ToImmutableArray());
+        }
+
+        return result;
+    }
+}

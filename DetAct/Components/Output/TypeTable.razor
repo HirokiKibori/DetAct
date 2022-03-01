@@ -1,0 +1,46 @@
+﻿@using System.Collections.Immutable
+
+@if(!Types.IsEmpty) {
+    <div class="table-responsive-md col-md-6" style="overflow: auto;">
+        <table class="table">
+            <tbody>
+                <tr>
+                    <td>
+                        <table class="table table-striped caption-top">
+                            <caption>@Name</caption>
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col" class="col-3">Type</th>
+                                    <th scope="col">Class and Interfaces</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var item in Types) {
+                                    <tr style="font-size: smaller;" class=" @(item.Value.FullName.StartsWith("DetAct.Behaviour")? "table-light": "table-primary")">
+                                        <td class="fw-bold">@item.Key</td>
+                                        <td>
+                                            <p>@item.Value.FullName</p>
+                                            <p class="text-muted">
+                                                @foreach(var path in item.Value.GetInterfaces().Select(i => i.FullName)) {
+                                                    <span>@path<br /></span>
+                                                }
+                                            </p>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Name { get; set; }
+
+    [Parameter]
+    public ImmutableSortedDictionary<string, Type> Types { get; set; }
+}

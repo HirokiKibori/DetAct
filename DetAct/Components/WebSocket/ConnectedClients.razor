@@ -1,0 +1,72 @@
+﻿@using DetAct.Data.Services
+
+@implements IDisposable
+@inject WebSocketService webSocketService
+
+<div class="table-responsive-md @Class">
+    <h3>Connected clients</h3>
+    <table class="table">
+        <tbody>
+            @foreach(var category in webSocketService.Sessions) {
+                <tr>
+                    <td>
+                        <table class="table table-striped caption-top">
+                            <caption>@category.Key</caption>
+                            <thead class="table-dark">
+                                <tr>
+                                    <th scope="col" class="col-1"></th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col" class="col-2 d-none d-md-table-cell">IP</th>
+                                    <th scope="col" class="col-2 d-none d-md-table-cell">Port</th>
+                                    <th scope="col" class="col-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var session in category.Value) {
+                                    <tr>
+                                        <td>
+                                            <button type="button" class="btn btn-secondary" title="disconnect"
+                                                    @onclick="async () => await session.Value.CloseAsync()">
+                                                <span class="oi oi-power-standby" aria-hidden="true"></span>
+                                            </button>
+                                        </td>
+                                        <td>@session.Key</td>
+                                        <td class="d-none d-md-table-cell">@session.Value.IP</td>
+                                        <td class="d-none d-md-table-cell">@session.Value.Port</td>
+                                        <td>
+                                            <a type="button" class="btn btn-secondary" title="details" href="clients/@category.Key/@session.Key">
+                                                <span class="oi oi-list" aria-hidden="true"></span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public string Class { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        webSocketService.OnDetActSessionsUpdated += OnDetActSessionsUpdated;
+    }
+
+    private async void OnDetActSessionsUpdated(object sender, EventArgs e)
+    {
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    public void Dispose()
+    {
+        webSocketService.OnDetActSessionsUpdated -= OnDetActSessionsUpdated;
+    }
+}

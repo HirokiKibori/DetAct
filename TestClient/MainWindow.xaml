@@ -1,0 +1,36 @@
+﻿<Window x:Class="TestClient.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:TestClient"
+        mc:Ignorable="d"
+        Title="_DetAct-&gt; TestClient" Height="400" Width="420" ResizeMode="CanMinimize" Foreground="#FF00030E" Closing="Window_Closing" FontFamily="Consolas">
+    <Grid>
+        <GroupBox x:Name="inputGroupBox" Header="Input" Margin="15,25,129,145" Padding="0,5,0,0" ScrollViewer.VerticalScrollBarVisibility="Disabled" MinWidth="50" MinHeight="50" Height="125.04">
+            <DockPanel ScrollViewer.VerticalScrollBarVisibility="Visible" Height="111" Margin="4,-5,0,10">
+                <DockPanel Height="22" Width="250" Margin="0,0,-1,75">
+                    <TextBox x:Name="inputTextBox" TextWrapping="Wrap" Width="175" Background="#FF272727" Foreground="#FFD6D6D6" SelectionBrush="#FFF1F597" SelectionTextBrush="#FF1F1E1E" Padding="5,2,5,5" AcceptsTab="True" VerticalScrollBarVisibility="Disabled" IsTabStop="False" BorderBrush="#FF00030E" MaxLines="1" FontSize="11" FontFamily="Consolas" HorizontalScrollBarVisibility="Disabled" Height="21"/>
+                    <Button x:Name="sendButton" Content="Send" DockPanel.Dock="Right" Width="57" Click="SendButton_Click"/>
+                </DockPanel>
+                <DockPanel Height="22" Width="250" Margin="-257,0,0,10">
+                    <Button x:Name="popButton" Content="Pop" DockPanel.Dock="Right" Width="57" Click="PopButton_Click"/>
+                    <Button x:Name="pushButton" Content="Push" DockPanel.Dock="Right" Width="57" Click="PushButton_Click" Margin="0,0,9,0"/>
+                    <CheckBox x:Name="withNullCheckBox" Content="accept 'null'" DockPanel.Dock="Left" Width="108" Height="14" Click="WithNullCheckBox_Click"/>
+                </DockPanel>
+                <DockPanel Height="22" Width="250" Margin="-244,0,0,-50">
+                    <CheckBox x:Name="withDelayCheckBox" Content="with delay" DockPanel.Dock="Left" Width="108" Height="14"/>
+                    <Slider x:Name="delaySlider" Width="123" Margin="0,0,0,0" SmallChange="1" Maximum="5000" AutoToolTipPlacement="BottomRight" Minimum="1000" TickFrequency="1000" LargeChange="1000" TickPlacement="BottomRight"/>
+                </DockPanel>
+            </DockPanel>
+        </GroupBox>
+        <TextBox x:Name="uriTextBox" HorizontalAlignment="Left" Margin="15,31,0,0" Text="ws://localhost:5000/ws/test/stack" TextWrapping="Wrap" VerticalAlignment="Top" Width="315" Background="#FF272727" Foreground="#FFD6D6D6" SelectionBrush="#FFF1F597" SelectionTextBrush="#FF1F1E1E" BorderBrush="#FF00030E" MaxLines="1" FontSize="11" FontFamily="Consolas"/>
+        <Label x:Name="label" Content="Server-IP:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Foreground="#FF00030E" FontFamily="Consolas"/>
+        <Button x:Name="connectButton" Content="Open" HorizontalAlignment="Left" Margin="342,30,0,0" VerticalAlignment="Top" Foreground="#FF00030E" Click="ConnectButton_Click" Width="48" Background="#FFCBD5F0" FontFamily="Consolas"/>
+        <Label x:Name="receivedLabel" Content="Received:" HorizontalAlignment="Left" Margin="274,54,0,0" VerticalAlignment="Top" Foreground="#FF00030E" FontFamily="Consolas"/>
+        <TextBox x:Name="receivedTextBox" HorizontalAlignment="Left" Margin="280,76,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="110" Height="104" Background="#FF272727" Foreground="#FFD6D6D6" SelectionBrush="#FFF1F597" SelectionTextBrush="#FF1F1E1E" Padding="5,2,5,5" AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" BorderBrush="#FF00030E" FontSize="11" FontFamily="Consolas" HorizontalScrollBarVisibility="Disabled" IsReadOnly="True"/>
+        <TextBox x:Name="consoleTextBox" HorizontalAlignment="Left" Margin="15,204,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="375" Height="145" Background="#FF272727" Foreground="#FFD6D6D6" SelectionBrush="#FFF1F597" SelectionTextBrush="#FF1F1E1E" Padding="5,2,5,5" AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto" BorderBrush="#FF00030E" FontSize="11" FontFamily="Consolas" HorizontalScrollBarVisibility="Disabled" IsReadOnly="True"/>
+        <Label x:Name="consoleLabel" Content="Console:" HorizontalAlignment="Left" Margin="10,182,0,0" VerticalAlignment="Top" Foreground="#FF00030E" FontFamily="Consolas"/>
+
+    </Grid>
+</Window>

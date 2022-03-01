@@ -1,0 +1,26 @@
+﻿@page "/clients"
+
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+<div>
+
+    <div class="row justify-content-md-center">
+        <AddClient StorrageKey="clients" />
+    </div>
+
+    <div class="row justify-content-md-center">
+        <KnownClients Class="col-md-8" StorrageKey="clients" />
+
+        <div class="col-md-1"></div>
+
+        <div class="col">
+            <h3>Info</h3>
+            <p>Here you can register clients to select their details-view without connecting them.</p>
+        </div>
+    </div>
+
+</div>
+
+@code {
+
+}

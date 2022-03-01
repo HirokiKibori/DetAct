@@ -1,0 +1,44 @@
+﻿@using DetAct.Components.SubComponents
+
+@using Tree = DetAct.Behaviour.BehaviourTree
+
+@inject IJSRuntime JS
+
+<div><h5 class="col-md-4 pt-2 mb-1"><label for="loaded_btml_file" class="form-label">@Name</label>:</h5></div>
+<div class="@Class border-darker" style="max-width: 100%; min-width: 100%;min-height: 100ex;">
+    <div id="draggable">
+        <ul class="tree m-auto">
+            @if(Tree is not null) {
+                <BehaviourNode ChildNode=Tree.Root />
+            }
+        </ul>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public Tree Tree { get; set; }
+
+    [Parameter]
+    public string Name { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if(firstRender) {
+            await JS.InvokeVoidAsync("loadDragableScript", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private async void UpdatePage(object sender, EventArgs e)
+    {
+        await InvokeAsync(() => base.StateHasChanged());
+    }
+}

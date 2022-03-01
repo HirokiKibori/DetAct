@@ -1,0 +1,141 @@
+﻿@page "/clients/{category}/{name}"
+
+@using System.IO
+
+@using DetAct.Data.Services
+@using DetAct.Data.Model
+
+@implements IDisposable
+@inject WebSocketService webSocketService
+@inject DirectoryWatcherService directoryWatcherService
+
+<div>
+    @if(Session is null) {
+
+        <div class="row justify-content-md-center">
+            <div class="alert alert-warning" role="alert">
+                Client is currently not connected.
+            </div>
+        </div>
+
+    }
+    else {
+        <div class="row mb-5">
+            <FileHandler Class="col-md-10" FileHasChanged="OnFileHasChanged" LoadOnly="true" Disabled="BehaviourTreeSession?.Running ?? false" />
+
+            <div class="col-md-1 offset-md-1">
+                @if(BehaviourTreeSession?.Running ?? false) {
+                    <button class="btn btn-danger" style="width: 4em;" @onclick="@(e => RunTree(false))" type="button">Stop</button>
+                }
+                else {
+                    <button class="btn btn-primary" style="width: 4em;" @onclick="@(e => RunTree(true))" type="button">Run</button>
+                }
+            </div>
+        </div>
+
+        <div class="row mb-3">
+
+            <div class="col w-25 m-1">
+                <div class="row">
+                    <div class="col col-md-10">
+                        <div class="card" style="padding: 0rem;">
+                            <div class="card-header" style="padding: 0rem 1rem;">
+                                <h4 class="card-title">@Name</h4>
+                                <h5 class="card-subtitle mb-2 text-muted">@Category</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul>
+                                    <li class="no-bullet"><span class="fw-bold">IP:</span> @Session?.IP</li>
+                                    <li class="no-bullet"><span class="fw-bold">Port:</span> @Session?.Port</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="w-75 m-1">
+                <div class="row justify-content-end">
+                    <BlackBoard Class="card col col-md-3 m-1" Style="padding: 0rem;" Boards="@BehaviourTreeSession?.Tree.Boards" />
+                </div>
+            </div>
+
+        </div>
+
+        <div class="row justify-content-md-center">
+            <BehaviourTree Class="col-md-12 overflow-hidden" Tree="@BehaviourTreeSession?.Tree" Name="@BehaviourTreeSession?.Tree?.Name" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Category { get; set; }
+
+    [Parameter]
+    public string Name { get; set; }
+
+    private DetActSession Session { get; set; } = null;
+
+    private BehaviourTreeSessionComponent BehaviourTreeSession { get; set; } = null;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        webSocketService.OnDetActSessionsUpdated += OnDetActSessionsUpdated;
+        SetSession();
+    }
+
+    private void SetSession()
+    {
+        Session = webSocketService.GetSession(Category, Name);
+
+        if(Session is not null) {
+            BehaviourTreeSession = Session.Components.First(component => component is BehaviourTreeSessionComponent) as BehaviourTreeSessionComponent;
+            BehaviourTreeSession.ComponentChanged = BehaviourTreeSessionChanged;
+
+            return;
+        }
+
+        BehaviourTreeSession = null;
+    }
+
+    private async void BehaviourTreeSessionChanged() => await InvokeAsync(() => StateHasChanged());
+
+    private async void OnDetActSessionsUpdated(object sender, WebSocketEventArgs e)
+    {
+        if(e.Category != Category && e.Name != Name)
+            return;
+
+        SetSession();
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private async void OnFileHasChanged(string fileName)
+    {
+        using(var fileContent = new StreamReader(directoryWatcherService.GetFile(fileName))) {
+            BehaviourTreeSession.LoadBTMLFile(btmlFileContent: await fileContent.ReadToEndAsync(), fileName);
+        }
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private void RunTree(bool state)
+    {
+        if(state) {
+            BehaviourTreeSession.RunTree(true);
+
+            return;
+        }
+
+        BehaviourTreeSession.RunTree(false);
+        BehaviourTreeSession.ResetTree();
+    }
+
+    public void Dispose()
+    {
+        webSocketService.OnDetActSessionsUpdated -= OnDetActSessionsUpdated;
+    }
+}

@@ -1,0 +1,21 @@
+﻿.CodeMirror {
+    max-width: 100%;
+    min-width: 100%;
+    display: block;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.0;
+    border: 1px solid #ced4da;
+    appearance: none;
+    border-radius: 0.25rem;
+    font-size: smaller;
+}
+
+.CodeMirror-vscrollbar {
+    margin-bottom: 15px;
+}
+
+.CodeMirror-wrap pre {
+    word-break: break-word;
+}

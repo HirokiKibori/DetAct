@@ -1,0 +1,24 @@
+﻿@page "/ws"
+
+@inject NavigationManager MyNavigationManager
+
+<div class="container">
+    <div class="row justify-content-md-center">
+        <div class="col-md-auto">
+            <h3>
+                Web-Socket Subdomain<br />
+                <small class="text-muted">Only available for Web-Socket clients...</small>
+            </h3>
+            <div class="alert alert-danger my-4" role="alert">
+                <p class="text-break">
+                    Web-Socket connections are available with the URI:<br />
+                    @(MyNavigationManager.BaseUri.Replace("http", "ws").Replace("https", "ws")){category}/{name}
+                </p>
+                <p>
+                    Categories and client-names can be added.<br />
+                    After a client has been added, a connection can be opened with a Web-Socket supporting client.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,290 @@
+﻿@using System.IO
+
+@using DetAct.Data.Services
+@using DetAct.Interpreter
+
+@using Tree = DetAct.Behaviour.BehaviourTree
+
+@inject DirectoryWatcherService directoryWatcherService
+@inject IJSRuntime JS
+
+<div class="row">
+    <h5 class="col-md-2 pt-2 mb-1"><label for="loaded_btml_file" class="form-label">Edit file</label>:</h5>
+
+    <form class="col-md-2 mb-1 offset-md-1">
+        <button class="btn btn-primary" @onclick="HandleBuildFile" type="button">Build</button>
+    </form>
+
+    <div class="col-md-1">
+        @if(IsValid) {
+            <div class="alert alert-success p-2 text-center" role="alert">Valid</div>
+        }
+        else {
+            <div class="alert alert-danger p-2 text-center" role="alert">Invalid</div>
+        }
+    </div>
+
+    <form class="col-md-4 mb-1 offset-md-1">
+        <div class="input-group">
+            <span class="input-group-text">Tree:</span>
+            <input class="form-control" @bind="FileName">
+            <span class="input-group-text d-none d-md-block">.btml</span>
+
+            @if(IsSaved) {
+                <button class="btn btn-primary" @onclick="HandleSaveFile" type="button" disabled>Save</button>
+            }
+            else {
+                <button class="btn btn-primary" @onclick="HandleSaveFile" type="button">Save</button>
+            }
+        </div>
+    </form>
+
+    <div class="col-md-1 mb-1 text-end mt-1">
+        <button class="btn btn-outline-success btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+            <span class="oi oi-question-mark" aria-hidden="true"></span>
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-1">
+        @if(BuildErrorMessages.Count > 0) {
+            <div class="alert alert-danger" role="alert">
+                <ul style="margin-bottom: 0px;">
+                    @foreach(var message in BuildErrorMessages) {
+                        <li>
+                            @message.Message
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if(BuildWarningMessages.Count > 0) {
+            <div class="alert alert-warning" role="alert">
+                <ul style="margin-bottom: 0px;">
+                    @foreach(var message in BuildWarningMessages) {
+                        <li>
+                            @message.Message
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+<div style="font-size: smaller;">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+        <div class="offcanvas-header">
+            <h2 id="offcanvasRightLabel" class="less-line-height">Help</h2>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <h3 class="text-decoration-underline less-line-height">Behaviour-Types</h3>
+
+            <h4 class="less-line-height mb-0">Essential</h4>
+            <ul>
+                <li class="no-bullet">@DetActInterpreter.Instance.RootBehaviour.Key</li>
+            </ul>
+
+            <h4 class="less-line-height mb-0">High-Level</h4>
+            <ul>
+                @foreach(var type in DetActInterpreter.Instance.HighLevelBehaviours) {
+                    <li class="no-bullet">@type.Key</li>
+                }
+            </ul>
+
+            <ul>
+                <li class="no-bullet">
+                    <h5 class="less-line-height mb-0">Decorators</h5>
+                    <ul class="mb-1">
+                        @foreach(var type in DetActInterpreter.Instance.Decorators) {
+                            <li class="no-bullet">@type.Key</li>
+                        }
+                    </ul>
+                </li>
+
+                <li class="no-bullet">
+                    <h5 class="less-line-height mb-0">Composites</h5>
+                    <ul class="mb-1">
+                        @foreach(var type in DetActInterpreter.Instance.Composites) {
+                            <li class="no-bullet">@type.Key</li>
+                        }
+                    </ul>
+                </li>
+            </ul>
+
+            <h4 class="less-line-height mb-0">Low-Level</h4>
+            <ul>
+                @foreach(var type in DetActInterpreter.Instance.LowLevelBehaviours) {
+                    <li class="no-bullet">@type.Key</li>
+                }
+            </ul>
+
+            <ul>
+                <li class="no-bullet">
+                    <h5 class="less-line-height mb-0">Actions</h5>
+                    <ul class="mb-1">
+                        @foreach(var type in DetActInterpreter.Instance.Actions) {
+                            <li class="no-bullet">@type.Key</li>
+                        }
+                    </ul>
+                </li>
+
+                <li class="no-bullet">
+                    <h5 class="less-line-height mb-0">Conditions</h5>
+                    <ul class="mb-1">
+                        @foreach(var type in DetActInterpreter.Instance.Conditions) {
+                            <li class="no-bullet">@type.Key</li>
+                        }
+                    </ul>
+                </li>
+            </ul>
+
+            <h3 class="text-decoration-underline less-line-height">Language-Rules</h3>
+            <p>
+                Statements in BTML (BehaviourTree-Modelling-Language) are definitions.
+                Like: 'IDENTIFIER:TYPE := ...;'
+            </p>
+            <p>
+                An IDENTIFIER starts with a character/letter. The rest persists of characters/letters, digits and '_'.
+                All IDENTIFIERs are unique. So duplications are not allowed.
+                Types are changeable, and all possible types are listed above. To add own types, you should read the description in the configuration-panel.
+            </p>
+            <p>A comment starts with '/*' and ends with '*/' (not inline).</p>
+            <p>
+                There are two typeless definitions:
+                <ul>
+                    <li>
+                        'FunctionList := [ FKTN_NAME(P_TYPE p_name), ...];'
+                        FKTN_NAME is like an IDENTIFIER and P_TYPEs are 'board' and 'string'. A parameter name 'p_name' is like an IDENTIFIER.
+                        Currently, p_names are only for documentation. They are not processed.
+                    </li>
+                    <li>
+                        'ROOT := CHILD_IDENTIFIER;'
+                        'ROOT' is a reserved IDENTIFIER and defines a behaviour of type 'Root'.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                There is one reserved type:
+                <ul>
+                    <li>
+                        'BOARD_IDENTIFIER:BlackBoard := [ (K, V), ...];'
+                        A 'BOARD_IDENTIFIER' is an IDENTIFIER. It's the name of a BlackBoard. 'BlackBoard' is the reserved type.
+                        A BlackBoard persists of a set of tuples, which are also key-value pairs. A key or value persists of letters or digits.
+                        Internally, they are processed as strings.
+                        A tuple-list/-set starts with '[' and ends with ']'.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                A high-level-behaviour is defined by 'IDENTIFIER:HL_BEHAVIOUR_TYPE := CHILD_IDENTIFIER | ...;'
+                Children are split by '|' and there must be at least one child.
+                If the high-level-behaviour is a subtype of 'Decorator', only the last child is used as child. Other children before are ignored.
+            </p>
+            <p>
+                A low-level-behaviour is defined by 'IDENTIFIER:LL_BEHAVIOUR_TYPE := FKTN_NAME(VALUE, ...);' or 'IDENTIFIER:LL_BEHAVIOUR_TYPE;',
+                if a low-level-behaviour is defined in code and doesn't need a function to process.
+                The used function needs to be defined in the 'FunctionList' with a unique 'FKTN_NAME'. If a low-level-behaviour is defined to process a function,
+                the concrete type needs to be a subtype of 'BtmlAction' or 'BtmlCondition'. Otherwise, function-name and values are not able to handle in code.
+                A VALUE must have the type of its parameter-definition in the 'FunctionList':
+                <ul>
+                    <li>
+                        A value of type 'board' is a value from a BlackBoard with a given key.
+                        For example, by using 'Default[XYZ]' as value. The value in BlackBoard 'Default' with key 'XZY' is used.
+                        Board-values are possible to use as keys in board-values. For example 'Default[Default[XYZ]]',
+                        the value of key 'XYZ' in board 'Default' is used as key in board 'Default' to get the value for a function.
+                        If a BlackBoard doesn't contain a given key, the value will be 'null'. The value of Default[null] is always 'null',
+                        if there is a BlackBoard defined as 'Default'. So 'null' is a reserved key for every used BlackBoard.
+                        A board-value given by a board-IDENTIFIER and no key - i.e. 'Default[]' - is not supported.
+                    </li>
+                    <li>
+                        A value of type 'string' can be every string. It starts and ends with '"'.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                Every high-level-behaviour and low-level-behaviour can get a parameter-list. This list starts with '{' and ends with '}'.
+                Because some behaviours need to initialized with parameters.
+                For example, a ParallelBehaviour needs two parameters. One policy to 'SUCCESS' and one to 'FAIL(URE)'.
+                The definition looks like 'A:ParallelBehaviour{1, n} := ...;'. It describes that a ParallelBehaviour will succeed, if one child succeed.
+                And the ParallelBehaviour will fail, if all children fail. So it's a Selector which ticks all children at once.
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row" style="padding: 0px;">
+    <div class="col-md-12 mb-1" style="padding: 0px;">
+        <textarea id="btml_code" style="visibility: hidden;" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public EventCallback<Tree> TreeWasCreated { get; set; }
+
+    private string FileContent { get; set; }
+
+    private string FileName { get; set; }
+
+    private bool IsValid { get; set; } = false;
+
+    private bool IsSaved { get; set; } = true;
+
+    private List<InterpreterMessage> BuildWarningMessages { get; set; } = new();
+
+    private List<InterpreterMessage> BuildErrorMessages { get; set; } = new();
+
+    public async void LoadFile(string fileName)
+    {
+        using(var fileContent = new StreamReader(directoryWatcherService.GetFile(fileName))) {
+            FileContent = await fileContent.ReadToEndAsync();
+            FileName = fileName;
+
+            await JS.InvokeVoidAsync("setContentCodeEditor", FileContent);
+        }
+
+        IsSaved = true;
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    private async void HandleBuildFile()
+    {
+        var buildResult = DetActInterpreter.Instance.GenrateBehaviourTree(FileContent, FileName);
+        IsValid = buildResult.IsValid;
+
+        var buildMessages = buildResult.Messages;
+        BuildWarningMessages = buildMessages.FindAll(message => message is WarningMessage).ToList();
+        BuildErrorMessages = buildMessages.FindAll(message => message is ErrorMessage).ToList();
+
+        await InvokeAsync(() => StateHasChanged());
+        await TreeWasCreated.InvokeAsync(buildResult.Tree);
+    }
+
+    private async void HandleSaveFile()
+    {
+        directoryWatcherService.SaveFile(FileName, FileContent);
+        IsSaved = true;
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        if(firstRender) {
+            await JS.InvokeVoidAsync("loadCodeEditor", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable("UpdateCode")]
+    public async void UpdateField(string codeValue)
+    {
+        FileContent = codeValue;
+        IsSaved = false;
+
+        await InvokeAsync(() => StateHasChanged());
+    }
+}

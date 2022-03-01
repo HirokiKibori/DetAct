@@ -1,0 +1,37 @@
+﻿/* --- Defeniton of initial BlackBoards */
+Default:BlackBoard := [(Pos_Start, 0), (Pos_End, 0),(Push, true), (Item, null)];
+QueueMemory:BlackBoard := [];
+
+/* --- Definition of client-supported functions */
+FunctionList := [
+					GreatherThen(board currentPos, board value),
+					CheckPush(board push),
+					GetItem(board itemToPop),
+					CheckItemToPush(board currentItem),
+					IncrementPos_(board currentPos, string keyForPos),
+					DecrementPos_(board currentPos, string keyForPos),
+					SaveItem_(board posToPush, board itemToPush, string boardName)
+				];
+
+/* --- HighLevel-tree */
+ROOT := Queue;
+Queue:Selector := PushTree | PopTree;
+
+PushTree:Root := EnQueue;
+PopTree:Root := DeQueue;
+
+EnQueue:Sequence := CheckEnQueue | CheckItem | Increment_End | EnQueueItem;
+DeQueue:Sequence := CheckPop | DeQueuePossible | Increment_Start | DeQueueItem;
+
+CheckPop:Inverter := CheckEnQueue;
+
+/* --- Conditions */
+DeQueuePossible:Condition := GreatherThen(Default[Pos_End], Default[Pos_Start]);
+CheckEnQueue:Condition := CheckPush(Default[Push]);
+CheckItem:Condition := CheckItemToPush(Default[Item]);
+
+/* --- Actions */
+DeQueueItem:Action := GetItem(QueueMemory[Default[Pos_Start]]);
+Increment_End:Action := IncrementPos_(Default[Pos_End], "Pos_End");
+Increment_Start:Action := IncrementPos_(Default[Pos_Start], "Pos_Start");
+EnQueueItem:Action := SaveItem_(Default[Pos_End], Default[Item], "QueueMemory");

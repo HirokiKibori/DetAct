@@ -1,0 +1,34 @@
+﻿@page "/config"
+
+@using System.Collections.Immutable
+
+@using DetAct.Data.Services
+
+@inject DirectoryWatcherService directoryWatcherService
+
+<div>
+    <div class="row justify-content-md-center">
+
+        <h3 class="text-decoration-underline less-line-height">Registerd Behaviour-Types</h3>
+
+        <TypeTable Name="Essential" Types="@(ImmutableSortedDictionary.Create<string, Type>().Add(DetActInterpreter.Instance.RootBehaviour.Key, DetActInterpreter.Instance.RootBehaviour.Value))" />
+
+        <TypeTable Name="High-Level-Behaviour" Types="DetActInterpreter.Instance.HighLevelBehaviours" />
+
+        <TypeTable Name="High-Level-Behaviour/Decorators" Types="DetActInterpreter.Instance.Decorators" />
+
+        <TypeTable Name="High-Level-Behaviour/Composites" Types="DetActInterpreter.Instance.Composites" />
+
+        <TypeTable Name="Low-Level-Behaviour" Types="DetActInterpreter.Instance.LowLevelBehaviours" />
+
+        <TypeTable Name="Low-Level-Behaviour/Actions" Types="DetActInterpreter.Instance.Actions" />
+
+        <TypeTable Name="Low-Level-Behaviour/Conditions" Types="DetActInterpreter.Instance.Conditions" />
+
+    </div>
+</div>
+
+@code {
+    //TODO: Add a short description how to add own classes/behaviours.
+    //TODO: Add posibillity to change path for files
+}

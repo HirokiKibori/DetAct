@@ -1,0 +1,30 @@
+﻿@using System.Collections.Concurrent
+
+@using DetAct.Behaviour
+
+@foreach(var board in Boards.OrderBy(item => item.Key)) {
+    <div class="@Class" sytle="@Style">
+        <div class="card-header" style="padding: 0rem 1rem;">
+            <h4 class="card-title">@board.Key</h4>
+            <h5 class="card-subtitle mb-3 text-muted">BlackBoard</h5>
+        </div>
+        <div class="card-body">
+            <ul>
+                @foreach(var item in board.Value.OrderBy(pair => pair.Key)) {
+                    <li class="no-bullet"><span class="fw-bold">@item.Key:</span> @item.Value</li>
+                }
+            </ul>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Class { get; set; }
+
+    [Parameter]
+    public string Style { get; set; }
+
+    [Parameter]
+    public ConcurrentDictionary<string, Blackboard<string>> Boards { get; set; } = new();
+}
