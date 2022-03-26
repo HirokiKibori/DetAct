@@ -140,14 +140,28 @@ namespace DetAct.Data.Model
 
             if(content.Name == "BT-Control") {
                 if(content.Items.TryGetValue("load", out string load) && !string.IsNullOrWhiteSpace(load)) {
-                    using var fileContent = new StreamReader(_directoryWatcherService.GetFile(load));
 
-                    LoadBTMLFile(btmlFileContent: await fileContent.ReadToEndAsync(), load);
-                    RunTree(true);
+                    try {
+                        using var fileContent = new StreamReader(_directoryWatcherService.GetFile(load));
+
+                        if(Running) {
+                            ResetTree();
+                            RunTree(false);
+                        }
+
+                        LoadBTMLFile(btmlFileContent: await fileContent.ReadToEndAsync(), load);
+
+                        RunTree(true);
+                    }
+                    catch(Exception e) {
+                        var error = new Error(name: e.GetType().Name, message: e.Message);
+                        SendMessage?.Invoke(new DetActMessage(error));
+                    }
 
                     return;
                 }
 
+                //TODO: find a better way (Why should there be a possibility to set a tick to false? -> sarcastic question)
                 if(CheckRunning(message) && content.Items.TryGetValue("tick", out string tick) && bool.TryParse(tick, out bool result) && result) {
                     if(ticking) {
                         var error = new Error(name: "CurrentlyTickingException", message: "Tree is currently ticking.");
