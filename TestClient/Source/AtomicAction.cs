@@ -12,15 +12,25 @@ namespace TestClient.Source
 
         public static BehaviourStatus GreatherThen(string currentPos, string value)
         {
-            if(int.TryParse(currentPos, out var pos) && int.TryParse(value, out var val) && pos > val)
+            if (int.TryParse(currentPos, out var pos) && int.TryParse(value, out var val) && pos > val)
                 return BehaviourStatus.SUCCESS;
 
             return BehaviourStatus.FAILURE;
         }
 
+        public BehaviourStatus WriteMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return BehaviourStatus.FAILURE;
+
+            Print?.Invoke(message);
+
+            return BehaviourStatus.SUCCESS;
+        }
+
         public BehaviourStatus CheckPush(string push)
         {
-            if(bool.TryParse(push, out var result) && result)
+            if (bool.TryParse(push, out var result) && result)
                 return BehaviourStatus.SUCCESS;
 
             return BehaviourStatus.FAILURE;
@@ -35,7 +45,7 @@ namespace TestClient.Source
 
         public BehaviourStatus CheckItemToPush(string itemToPush)
         {
-            if(!(string.IsNullOrWhiteSpace(itemToPush) || itemToPush.ToLower() == "null") || AcceptNull)
+            if (!(string.IsNullOrWhiteSpace(itemToPush) || itemToPush.ToLower() == "null") || AcceptNull)
                 return BehaviourStatus.SUCCESS;
 
             return BehaviourStatus.FAILURE;
@@ -43,7 +53,8 @@ namespace TestClient.Source
 
         public BehaviourStatus IncrementPos_(string currentPos, string keyForPos)
         {
-            if(int.TryParse(currentPos, out var result)) {
+            if (int.TryParse(currentPos, out var result))
+            {
                 result++;
 
                 var updatePos = new Blackboard(name: "Default", new() { { keyForPos, result.ToString() } });
@@ -57,7 +68,8 @@ namespace TestClient.Source
 
         public BehaviourStatus DecrementPos_(string currentPos, string keyForPos)
         {
-            if(int.TryParse(currentPos, out var result) && result > 0) {
+            if (int.TryParse(currentPos, out var result) && result > 0)
+            {
                 result--;
 
                 var updatePos = new Blackboard(name: "Default", new() { { keyForPos, result.ToString() } });
