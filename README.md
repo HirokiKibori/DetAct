@@ -24,4 +24,6 @@ There are many things to do until v1.0:
 - add the possibility to reduce trees and get a better representation of them
 - remove jQuery and Bootstrap
 - add a more generic Test-Client
+- create a library for web-socket-services/clients with DetactMessage-class
+- add possibility to check functions between client and behaviour-model 
 - add documentation
