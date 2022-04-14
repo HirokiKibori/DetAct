@@ -1,0 +1,57 @@
+USED PACKAGES:
+##################################
+
+DetAct (dependencies):
+----------------------------------
+
+- Pidgin: https://github.com/benjamin-hodgson/Pidgin (MIT)
+
+- Blazored.LocalStorage: https://github.com/Blazored/LocalStorage (MIT)
+
+- DetAct-Lib: https://github.com/HirokiKibori/DetAct-Lib (MIT)
+
+- open-iconic: https://useiconic.com/open
+		FONT: (SIL OPEN FONT LICENSE Version 1.1)
+		ICON: (MIT)
+		
+- bootstrap v5.0.2: https://getbootstrap.com/ [https://github.com/twbs/bootstrap] (MIT)
+
+- jQuery v3.6.0: https://jquery.com/ [https://jquery.org/license] (MIT)
+
+- CodeMirror: https://codemirror.net [https://codemirror.net/LICENSE] (MIT)
+
+- .Net (6.0.4):
+		Microsoft.NETCore.App: https://github.com/dotnet/runtime (MIT)
+		Microsoft.AspNetCore.App: https://github.com/dotnet/aspnetcore (MIT)
+		
+		System.Text.Json.SourceGeneration: https://github.com/dotnet/runtime [https://www.nuget.org/packages/System.Text.Json/] (MIT)
+		
+		Microsoft.AspNetCore.Analyzers: https://github.com/dotnet/aspnetcore (MIT)
+		Microsoft.AspNetCore.App.Analyzers: https://github.com/dotnet/aspnetcore (MIT)
+		Microsoft.AspNetCore.App.CodeFixes: https://github.com/dotnet/aspnetcore (MIT)
+		Microsoft.AspNetCore.Components.Analyzers: https://github.com/dotnet/aspnetcore (MIT)
+		Microsoft.AspNetCore.Mvc.Analyzers: https://github.com/dotnet/aspnetcore (MIT)
+		Microsoft.NET.Sdk.Razor.SourceGenerators: https://github.com/dotnet/razor-tooling (MIT)
+		Microsoft.AspNetCore.Razor.SoourceGenerator.Tooling.Internal: https://github.com/dotnet/razor-tooling (MIT)
+		Microsoft.CodeAnalysis.NetAnalyzers: https://github.com/dotnet/roslyn-analyzers (MIT)
+		Microsoft.CodeAnalysis.CSharp.NetAnalyzers: https://github.com/dotnet/roslyn-analyzers (MIT)
+		Microsoft.Extensions.Logging.Generators: https://www.nuget.org/packages/Microsoft.Extensions.Logging (MIT)
+		
+- CleanTreeDiagram: https://www.cssscript.com/clean-tree-diagram/ [2021-06-11 | Ross Angus (December 18, 2019)] (MIT)
+
+
+TestClient (dependencies):
+----------------------------------
+
+- .Net (6.0.4):
+		Microsoft.NETCore.App: https://github.com/dotnet/runtime (MIT)
+		Microsoft.WindowsDesktop.App.Ref (WPF): https://github.com/dotnet/windowsdesktop (MIT)
+		
+		System.Text.Json.SourceGeneration: https://github.com/dotnet/runtime [https://www.nuget.org/packages/System.Text.Json/] (MIT)
+		
+		Microsoft.CodeAnalysis.NetAnalyzers: https://github.com/dotnet/roslyn-analyzers (MIT)
+		Microsoft.CodeAnalysis.CSharp.NetAnalyzers: https://github.com/dotnet/roslyn-analyzers (MIT)
+
+
+OTHER LICENSES:
+##################################
