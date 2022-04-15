@@ -1,0 +1,7 @@
+﻿FunctionList := [WriteMessage(string message)];
+Default:BlackBoard := [];
+
+ROOT := TwoTimes;
+
+TwoTimes:Repeater{2} := Print;
+Print:Action := WriteMessage("test");

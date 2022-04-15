@@ -41,6 +41,9 @@
     <None Update="InputFiles\medical_ar.btml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="InputFiles\Print.btml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="InputFiles\QueueExample.btml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

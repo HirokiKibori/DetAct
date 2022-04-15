@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,7 +10,9 @@ namespace TestClient
 {
     public partial class MainWindow : Window
     {
-        private static readonly string FILE_NAME = "StackExample";
+        private static readonly string STACK_FILE_NAME = "StackExample";
+        private static readonly string QUEUE_FILE_NAME = "QueueExample";
+        private static readonly string TEST_CODE_PATH = @"Print.btml";
 
         private DetActClient client = null;
 
@@ -62,10 +65,12 @@ namespace TestClient
         {
             connectButton.IsEnabled = false;
 
-            if(client is null) {
+            if (client is null)
+            {
                 client = new();
 
-                try {
+                try
+                {
                     connectButton.Content = "Close";
 
                     await client.Connect(new Uri(uriTextBox.Text), ReceiveClientClosed);
@@ -73,15 +78,15 @@ namespace TestClient
                     PrintToConsole(text: "connected");
 
                     connectButton.IsEnabled = true;
-
-                    RunTree(FILE_NAME);
                 }
-                catch(Exception ex) {
+                catch (Exception ex)
+                {
                     PrintErrorToOutput(ex.Message);
                     CancelClient(false);
                 }
             }
-            else {
+            else
+            {
                 await client.CloseAsync();
             }
         }
@@ -91,7 +96,8 @@ namespace TestClient
 
         private void ReceiveMessage(DetActMessage message)
         {
-            switch(message.Type) {
+            switch (message.Type)
+            {
                 case MessageType.BLACKBOARD:
                     break;
 
@@ -117,8 +123,10 @@ namespace TestClient
         {
             var content = message.Content as Control;
 
-            if(content.Name == "RootResult") {
-                if(content.Items.ContainsKey("status")) {
+            if (content.Name == "RootResult")
+            {
+                if (content.Items.ContainsKey("status"))
+                {
                     PrintToConsole($"Tree finished tick with: {content.Items["status"]}");
                     SetButtonsEnabled(true);
                 }
@@ -126,11 +134,13 @@ namespace TestClient
                 return;
             }
 
-            if(content.Name == "TreeState") {
-                if(content.Items.ContainsKey("running")) {
+            if (content.Name == "TreeState")
+            {
+                if (content.Items.ContainsKey("running"))
+                {
                     PrintToConsole($"Tree changed running-state to: {content.Items["running"]}");
 
-                    if(bool.TryParse(content.Items["running"], out bool running))
+                    if (bool.TryParse(content.Items["running"], out bool running))
                         SetButtonsEnabled(running);
                 }
 
@@ -147,27 +157,31 @@ namespace TestClient
             var behaviour = message.Content as Behaviour;
             var result = BehaviourStatus.FAILURE;
 
-            foreach(var command in behaviour.Commands) {
-                if(string.IsNullOrWhiteSpace(command.Key) || command.Key.ToLower() == "null") {
+            foreach (var command in behaviour.Commands)
+            {
+                if (string.IsNullOrWhiteSpace(command.Key) || command.Key.ToLower() == "null")
+                {
                     result = BehaviourStatus.FAILURE;
                     break;
                 }
 
-                try {
+                try
+                {
                     var method = atomicActionType.GetMethod(command.Key);
                     result = (BehaviourStatus)method?.Invoke(action, command.Value.ToArray());
                 }
-                catch(Exception) {
+                catch (Exception)
+                {
                     result = BehaviourStatus.FAILURE;
                 }
 
-                if(result is BehaviourStatus.FAILURE)
+                if (result is BehaviourStatus.FAILURE)
                     break;
             }
 
             var isChecked = Dispatcher.Invoke(callback: () => withDelayCheckBox.IsChecked.Value);
 
-            if(isChecked && behaviour.Type == BehaviourType.ACTION)
+            if (isChecked && behaviour.Type == BehaviourType.ACTION)
                 await Task.Delay(Convert.ToInt32(delaySlider.Value));
 
             behaviour.Status = result;
@@ -183,11 +197,24 @@ namespace TestClient
 
         private void RunTree(string fileName)
         {
-            if(string.IsNullOrWhiteSpace(fileName))
+            if (string.IsNullOrWhiteSpace(fileName))
                 return;
 
-
             var run = new Control(name: "BT-Control", new() { { "load", fileName } });
+            client?.Send(new DetActMessage(run));
+        }
+
+        private void RunTreeCode(string path)
+        {
+            if (!File.Exists(path))
+            {
+                PrintToConsole($"file '{path}' not existing");
+                return;
+            }
+
+            string code = File.ReadAllText(path);
+
+            var run = new Control(name: "BT-Control", new() { { "load_code", code } });
             client?.Send(new DetActMessage(run));
         }
 
@@ -213,7 +240,7 @@ namespace TestClient
             client?.Dispose();
             client = null;
 
-            if(printClosed)
+            if (printClosed)
                 PrintToConsole(text: "closed");
 
             connectButton.Content = "Open";
@@ -224,7 +251,8 @@ namespace TestClient
 
         private async void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            if(client is not null) {
+            if (client is not null)
+            {
                 await client.CloseAsync();
                 CancelClient();
             }
@@ -234,6 +262,21 @@ namespace TestClient
         {
             var isChecked = Dispatcher.Invoke(callback: () => withNullCheckBox.IsChecked.Value);
             action.AcceptNull = isChecked;
+        }
+
+        private void StackButton_Click(object sender, RoutedEventArgs e)
+        {
+            RunTree(STACK_FILE_NAME);
+        }
+
+        private void QueueButton_Click(object sender, RoutedEventArgs e)
+        {
+            RunTree(QUEUE_FILE_NAME);
+        }
+
+        private void PrintButton_Click(object sender, RoutedEventArgs e)
+        {
+            RunTreeCode(TEST_CODE_PATH);
         }
     }
 }
