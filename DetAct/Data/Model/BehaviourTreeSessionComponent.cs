@@ -1,15 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 
 using DetAct.Behaviour;
 using DetAct.Data.Services;
+using DetAct.Interpreter;
 
-namespace DetAct.Data.Model
-{
-    public class BehaviourTreeSessionComponent : SessionComponent
-    {
+namespace DetAct.Data.Model {
+    public class BehaviourTreeSessionComponent : SessionComponent {
         private bool ticking = false;
 
         //(DetActMessage.GetHashCode, Action/Condition)
@@ -24,15 +25,13 @@ namespace DetAct.Data.Model
         public BehaviourTreeSessionComponent(DetActSession parent, DirectoryWatcherService directoryWatcherService) : base(parent)
             => _directoryWatcherService = directoryWatcherService;
 
-        private bool CheckRunning(DetActMessage message)
-        {
+        private bool CheckRunning(DetActMessage message) {
             if(!Running) {
                 SendMessage?.Invoke(
                     new DetActMessage(new Error(
                         name: "TreeNotRunningException",
                         message: $"No running tree in current session. Ignored message:{Environment.NewLine}{message}")
-                    )
-                    { ID = message.ID });
+                    ) { ID = message.ID });
 
                 return false;
             }
@@ -40,8 +39,7 @@ namespace DetAct.Data.Model
             return true;
         }
 
-        public override async void ReceiveMessage(DetActMessage message)
-        {
+        public override async void ReceiveMessage(DetActMessage message) {
             DetActMessage answer = null;
 
             switch(message.Type) {
@@ -72,22 +70,31 @@ namespace DetAct.Data.Model
                 await SendMessage?.Invoke(answer);
         }
 
-        public void LoadBTMLFile(string btmlFileContent, string name)
-        {
-            Tree = DetActInterpreter.Instance.GenrateBehaviourTree(btmlFileContent, name).Tree;
+        public ImmutableList<InterpreterMessage> LoadBehaviourModel(string btmlFileContent, string name) {
+            var result = DetActInterpreter.Instance.GenrateBehaviourTree(btmlFileContent, name);
+
+            if(!result.IsValid) {
+                throw new InvalidDataException(
+                    string.Join(Environment.NewLine,
+                        result.Messages.Select(m => $"{m.MessageType}: {m.Message}"))
+                    );
+            }
+
+            Tree = result.Tree;
 
             var root = Tree.Root as DetActRoot;
             if(root is not null) {
                 root.Session = this;
                 root.TerminationAction = status => FinishFullTick(status);
             }
+
+            return result.Messages;
         }
 
         private void HasChanged()
             => ComponentChanged?.Invoke();
 
-        public void RunTree(bool state)
-        {
+        public void RunTree(bool state) {
             Running = Tree is not null && Tree != BehaviourTree.Default && state;
 
             var control = new Control(name: "TreeState", items: new Dictionary<string, string> { { "running", Running.ToString().ToLower() } });
@@ -96,14 +103,12 @@ namespace DetAct.Data.Model
             HasChanged();
         }
 
-        public override void SessionClosed()
-        {
+        public override void SessionClosed() {
             RunTree(false);
             ResetTree();
         }
 
-        private DetActMessage HandleBlackboardMessage(DetActMessage message)
-        {
+        private DetActMessage HandleBlackboardMessage(DetActMessage message) {
             var content = message.Content as Blackboard;
 
             if(Tree.GetBoard(content.Name, out var board)) {
@@ -122,8 +127,7 @@ namespace DetAct.Data.Model
             return new DetActMessage(new Error(name: "IndefinedBoardException", message: $"No board with name '{content.Name}' defined for tree.")) { ID = message.ID };
         }
 
-        public bool SendBehaviourMessage(Behaviour behaviour, ILowLevelDetActBehaviour instance)
-        {
+        public bool SendBehaviourMessage(Behaviour behaviour, ILowLevelDetActBehaviour instance) {
             if(SendMessage is null)
                 return false;
 
@@ -134,24 +138,43 @@ namespace DetAct.Data.Model
             return true;
         }
 
-        private async void HandleControlMessage(DetActMessage message)
-        {
+        private async void HandleControlMessage(DetActMessage message) {
             var content = message.Content as Control;
 
             if(content.Name == "BT-Control") {
-                if(content.Items.TryGetValue("load", out string load) && !string.IsNullOrWhiteSpace(load)) {
-
+                if(content.Items.Keys.Any(key => key.Equals("load_code") || key.Equals("load"))) {
                     try {
-                        using var fileContent = new StreamReader(_directoryWatcherService.GetFile(load));
+                        string treeModel = "";
+                        string name = "externCode";
 
-                        if(Running) {
-                            ResetTree();
-                            RunTree(false);
+                        if(content.Items.TryGetValue("load_code", out string code)) {
+                            treeModel = code;
                         }
 
-                        LoadBTMLFile(btmlFileContent: await fileContent.ReadToEndAsync(), load);
+                        if(content.Items.TryGetValue("load", out string fileName)) {
+                            using var fileContent = new StreamReader(_directoryWatcherService.GetFile(fileName));
+                            treeModel = await fileContent.ReadToEndAsync();
 
-                        RunTree(true);
+                            name = fileName;
+                        }
+
+                        if(!string.IsNullOrWhiteSpace(treeModel)) {
+                            if(Running) {
+                                ResetTree();
+                                RunTree(false);
+                            }
+
+                            var messages = LoadBehaviourModel(btmlFileContent: treeModel, name);
+                            if(!messages.IsEmpty) {
+                                var error = new Error(name: "InterpreterWarning",
+                                    message: string.Join(Environment.NewLine,
+                                        messages.Select(m => $"{m.MessageType}: {m.Message}"))
+                                    );
+                                SendMessage?.Invoke(new DetActMessage(error));
+                            }
+
+                            RunTree(true);
+                        }
                     }
                     catch(Exception e) {
                         var error = new Error(name: e.GetType().Name, message: e.Message);
@@ -161,7 +184,7 @@ namespace DetAct.Data.Model
                     return;
                 }
 
-                //TODO: find a better way (Why should there be a possibility to set a tick to false? -> sarcastic question)
+                // only tick, if there is currently no tick
                 if(CheckRunning(message) && content.Items.TryGetValue("tick", out string tick) && bool.TryParse(tick, out bool result) && result) {
                     if(ticking) {
                         var error = new Error(name: "CurrentlyTickingException", message: "Tree is currently ticking.");
@@ -180,33 +203,30 @@ namespace DetAct.Data.Model
             }
         }
 
-        public void FinishFullTick(BehaviourStatus status)
-        {
+        public void FinishFullTick(BehaviourStatus status) {
             ticking = false;
 
             var control = new Control(name: "RootResult", items: new Dictionary<string, string> { { "status", status.ToString() } });
             SendMessage?.Invoke(new DetActMessage(control));
         }
 
-        private void HandleBehaviourMessage(DetActMessage message)
-        {
+        private void HandleBehaviourMessage(DetActMessage message) {
             if(ProcessingLLBehavioursCache.TryRemove(key: message.GetHashCode(), value: out ILowLevelDetActBehaviour behaviour)) {
                 var content = message.Content as Behaviour;
                 behaviour.UpdateStatus(content.Status);
             }
         }
 
-        public void ResetTree()
-        {
+        public void ResetTree() {
             Tree.Interrupt();
             ProcessingLLBehavioursCache.Clear();
             SetBehaviourToIndefined(Tree.Root);
+            ticking = false;
 
             HasChanged();
         }
 
-        private void SetBehaviourToIndefined(IBehaviour behaviour)
-        {
+        private void SetBehaviourToIndefined(IBehaviour behaviour) {
             if(behaviour is IHighLevelBehaviour hlBehaviour)
                 foreach(var child in hlBehaviour.Childs)
                     SetBehaviourToIndefined(child);
@@ -214,8 +234,7 @@ namespace DetAct.Data.Model
             behaviour.ResetStatus();
         }
 
-        protected override void ManagedDisposeHook()
-        {
+        protected override void ManagedDisposeHook() {
             RunTree(false);
             ResetTree();
         }

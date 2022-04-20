@@ -3,10 +3,8 @@
 using DetAct.Behaviour;
 using DetAct.Behaviour.Base;
 
-namespace DetAct.Data.Model
-{
-    public class DetActAction : BtmlAction, ILowLevelDetActBehaviour, IInitializable
-    {
+namespace DetAct.Data.Model {
+    public class DetActAction : BtmlAction, ILowLevelDetActBehaviour, IInitializable, IInterruptible {
         private bool finished = false;
 
         private Behaviour behaviour;
@@ -15,8 +13,7 @@ namespace DetAct.Data.Model
 
         public DetActAction(string name) : base(name) { }
 
-        protected override BehaviourStatus ProcessFunctionCall(Dictionary<string, IEnumerable<string>> functions)
-        {
+        protected override BehaviourStatus ProcessFunctionCall(Dictionary<string, IEnumerable<string>> functions) {
             if(!finished && Status is not BehaviourStatus.RUNNING) {
                 behaviour = new Behaviour(Name, commands: functions) { Type = BehaviourType.ACTION };
 
@@ -26,8 +23,7 @@ namespace DetAct.Data.Model
             return Status;
         }
 
-        protected override void TaskAfterUpdate()
-        {
+        protected override void TaskAfterUpdate() {
             if(behaviour is null)
                 return;
 
@@ -42,8 +38,7 @@ namespace DetAct.Data.Model
             behaviour = null;
         }
 
-        public void UpdateStatus(BehaviourStatus status)
-        {
+        public void UpdateStatus(BehaviourStatus status) {
             Status = status;
             finished = true;
 
@@ -54,5 +49,10 @@ namespace DetAct.Data.Model
 
         public void OnTerminate(BehaviourStatus status)
             => finished = false;
+
+        public void Interrupt() {
+            Status = BehaviourStatus.INTERRUPTED;
+            finished = true;
+        }
     }
 }

@@ -116,7 +116,7 @@
     private async void OnFileHasChanged(string fileName)
     {
         using(var fileContent = new StreamReader(directoryWatcherService.GetFile(fileName))) {
-            BehaviourTreeSession.LoadBTMLFile(btmlFileContent: await fileContent.ReadToEndAsync(), fileName);
+            BehaviourTreeSession.LoadBehaviourModel(btmlFileContent: await fileContent.ReadToEndAsync(), fileName);
         }
 
         await InvokeAsync(() => StateHasChanged());
